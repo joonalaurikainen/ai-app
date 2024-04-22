@@ -24,11 +24,6 @@ const GameBoard = ({ startGame }) => {
 
   const handleCloseModal = () => {
     setShowModal(false);
-    setGameStarted(true);
-    setGameOver(false);
-    setScore(0);
-    generateFood();
-    setObstacles([{ x: 15, y: 15 }]); // Alustetaan esteet uudestaan pelin alkaessa
   };
 
   const handleSpeedSelection = (selectedSpeed) => {
@@ -42,12 +37,21 @@ const GameBoard = ({ startGame }) => {
   };
 
   const generateFood = useCallback(() => {
-    const newFood = {
-      x: Math.floor(Math.random() * gridSize),
-      y: Math.floor(Math.random() * gridSize)
+    const findValidFoodPosition = () => {
+      const potentialFood = {
+        x: Math.floor(Math.random() * gridSize),
+        y: Math.floor(Math.random() * gridSize)
+      };
+      if (obstacles.some(obstacle => obstacle.x === potentialFood.x && obstacle.y === potentialFood.y)) {
+        return findValidFoodPosition();
+      } else {
+        return potentialFood;
+      }
     };
+
+    const newFood = findValidFoodPosition();
     setFood(newFood);
-  }, [gridSize]);
+  }, [gridSize, obstacles]);
 
   const generateObstacle = useCallback(() => {
     const newObstacle = {
@@ -94,19 +98,18 @@ const GameBoard = ({ startGame }) => {
         return prevSnake;
       }
 
-      newSnake.unshift(head);
-
       if (head.x === food.x && head.y === food.y) {
-        setScore(prevScore => prevScore + 1);
         generateFood();
         generateObstacle(); // Lisätään uusi este ruoan syömisen yhteydessä
       } else {
         newSnake.pop();
       }
+      newSnake.unshift(head);
 
+      setScore(snake.length - 1, +1)
       return newSnake;
     });
-  }, [direction, gridSize, food, generateFood, obstacles, generateObstacle]);
+  }, [direction, gridSize, food, obstacles, generateFood, generateObstacle, snake.length]);
 
   const handleKeyPress = useCallback((e) => {
     switch (e.key) {
