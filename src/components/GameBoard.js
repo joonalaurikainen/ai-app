@@ -8,8 +8,8 @@ import { Button, Modal } from 'react-bootstrap';
 const GameBoard = ({ startGame }) => {
   const [snake, setSnake] = useState([{ x: 10, y: 10 }]);
   const [food, setFood] = useState({ x: 5, y: 5 });
+  const [foodEaten, setFoodEaten] = useState(false);
   const [obstacles, setObstacles] = useState([{ x: 15, y: 15 }]); // Muutettu esteiden tilaa arrayksi
-
   const [direction, setDirection] = useState('RIGHT');
   const [gameOver, setGameOver] = useState(true);
   const [speed, setSpeed] = useState(200);
@@ -51,7 +51,18 @@ const GameBoard = ({ startGame }) => {
 
     const newFood = findValidFoodPosition();
     setFood(newFood);
+    setFoodEaten(false); // Reset the foodEaten state whenever new food is generated
   }, [gridSize, obstacles]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!foodEaten) {
+        generateFood();
+      }
+    }, 60000); // 60000 milliseconds = 1 minute
+
+    return () => clearTimeout(timer); // This will clear the timer when the component unmounts or when foodEaten changes
+  }, [foodEaten, generateFood]);
 
   const generateObstacle = useCallback(() => {
     const newObstacle = {
@@ -106,7 +117,16 @@ const GameBoard = ({ startGame }) => {
       }
       newSnake.unshift(head);
 
-      setScore(snake.length - 1, +1)
+      const newScore = snake.length - 1;
+      setScore(newScore);
+
+      // Save high score to local storage
+      const highScore = localStorage.getItem('highScore');
+      if (!highScore || newScore > highScore) {
+        localStorage.setItem('highScore', newScore);
+      }
+
+
       return newSnake;
     });
   }, [direction, gridSize, food, obstacles, generateFood, generateObstacle, snake.length]);
@@ -211,7 +231,9 @@ const GameBoard = ({ startGame }) => {
       </div>
       <div className="score-container">
         <span className="score">Pisteet: {score}</span>
+        <span className="highscore">Ennätyspisteet: {localStorage.getItem('highScore') || 0}</span>
       </div>
+
     </>
   );
 };
